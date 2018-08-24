@@ -61,7 +61,7 @@ func (sm *StateMachine) Event(name string) *Event {
 }
 
 // Trigger trigger an event
-func (sm *StateMachine) Trigger(name string, value Stater, notes ...string) error {
+func (sm *StateMachine) Trigger(name string, value Stater) error {
 	stateWas := value.GetState()
 
 	if stateWas == "" {
