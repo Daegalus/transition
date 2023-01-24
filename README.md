@@ -4,7 +4,9 @@ Transition is a [Golang](http://golang.org/) [*state machine*](https://en.wikipe
 
 NOTE: This fork removes all GORM/database backed functionality including dependencies. The goal here is to have a clean and useful FSM implementation, and nothing more.
 
-[![GoDoc](https://godoc.org/github.com/qor/transition?status.svg)](https://godoc.org/github.com/qor/transition)
+NOTE Jan/24/2023: This new fork adds support for Generics and go.mod
+
+[![GoDoc](https://godoc.org/github.com/daegalus/transition?status.svg)](https://godoc.org/github.com/daegalus/transition)
 
 ## Usage
 
@@ -13,7 +15,7 @@ NOTE: This fork removes all GORM/database backed functionality including depende
 Embed `transition.Transition[<your type>]` into your struct, it will enable the state machine feature for the struct:
 
 ```go
-import "github.com/qor/transition"
+import "github.com/daegalus/transition"
 
 type Order struct {
   ID uint
@@ -92,4 +94,4 @@ order.SetState("finished") // this will only update order's state
 
 ## License
 
-Released under the [MIT License](http://opensource.org/licenses/MIT).
+Released under the [ISC License](http://opensource.org/licenses/ISC).
