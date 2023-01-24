@@ -1,21 +1,19 @@
-package transition_test
+package transition
 
 import (
 	"errors"
 	"testing"
-
-	"github.com/cheapRoc/transition"
 )
 
 type Order struct {
 	Id      int
 	Address string
 
-	transition.Transition
+	Transition[Order]
 }
 
-func getStateMachine() *transition.StateMachine {
-	var orderStateMachine = transition.New(&Order{})
+func getStateMachine() *StateMachine[*Order] {
+	var orderStateMachine = New(&Order{})
 
 	orderStateMachine.Initial("draft")
 	orderStateMachine.State("checkout")
@@ -31,7 +29,7 @@ func getStateMachine() *transition.StateMachine {
 	return orderStateMachine
 }
 
-func CreateOrderAndExecuteTransition(transition *transition.StateMachine, event string, order *Order) error {
+func CreateOrderAndExecuteTransition(transition *StateMachine[*Order], event string, order *Order) error {
 	if err := transition.Trigger(event, order); err != nil {
 		return err
 	}
@@ -92,10 +90,10 @@ func TestStateCallbacks(t *testing.T) {
 
 	address1 := "I'm an address should be set when enter checkout"
 	address2 := "I'm an address should be set when exit checkout"
-	orderStateMachine.State("checkout").Enter(func(order interface{}) error {
+	orderStateMachine.State("checkout").Enter(func(order Stater[*Order]) error {
 		order.(*Order).Address = address1
 		return nil
-	}).Exit(func(order interface{}) error {
+	}).Exit(func(order Stater[*Order]) error {
 		order.(*Order).Address = address2
 		return nil
 	})
@@ -124,10 +122,10 @@ func TestEventCallbacks(t *testing.T) {
 		prevState, afterState string
 	)
 
-	orderStateMachine.Event("checkout").To("checkout").From("draft").Before(func(order interface{}) error {
+	orderStateMachine.Event("checkout").To("checkout").From("draft").Before(func(order Stater[*Order]) error {
 		prevState = order.(*Order).State
 		return nil
-	}).After(func(order interface{}) error {
+	}).After(func(order Stater[*Order]) error {
 		afterState = order.(*Order).State
 		return nil
 	})
@@ -152,7 +150,7 @@ func TestTransitionOnEnterCallbackError(t *testing.T) {
 		orderStateMachine = getStateMachine()
 	)
 
-	orderStateMachine.State("checkout").Enter(func(order interface{}) (err error) {
+	orderStateMachine.State("checkout").Enter(func(order Stater[*Order]) (err error) {
 		return errors.New("intentional error")
 	})
 
@@ -171,7 +169,7 @@ func TestTransitionOnExitCallbackError(t *testing.T) {
 		orderStateMachine = getStateMachine()
 	)
 
-	orderStateMachine.State("checkout").Exit(func(order interface{}) (err error) {
+	orderStateMachine.State("checkout").Exit(func(order Stater[*Order]) (err error) {
 		return errors.New("intentional error")
 	})
 
@@ -194,7 +192,7 @@ func TestEventOnBeforeCallbackError(t *testing.T) {
 		orderStateMachine = getStateMachine()
 	)
 
-	orderStateMachine.Event("checkout").To("checkout").From("draft").Before(func(order interface{}) error {
+	orderStateMachine.Event("checkout").To("checkout").From("draft").Before(func(order Stater[*Order]) error {
 		return errors.New("intentional error")
 	})
 
@@ -213,7 +211,7 @@ func TestEventOnAfterCallbackError(t *testing.T) {
 		orderStateMachine = getStateMachine()
 	)
 
-	orderStateMachine.Event("checkout").To("checkout").From("draft").After(func(order interface{}) error {
+	orderStateMachine.Event("checkout").To("checkout").From("draft").After(func(order Stater[*Order]) error {
 		return errors.New("intentional error")
 	})
 

@@ -6,18 +6,18 @@ NOTE: This fork removes all GORM/database backed functionality including depende
 
 [![GoDoc](https://godoc.org/github.com/qor/transition?status.svg)](https://godoc.org/github.com/qor/transition)
 
-# Usage
+## Usage
 
 ### Enable Transition for your struct
 
-Embed `transition.Transition` into your struct, it will enable the state machine feature for the struct:
+Embed `transition.Transition[<your type>]` into your struct, it will enable the state machine feature for the struct:
 
 ```go
 import "github.com/qor/transition"
 
 type Order struct {
   ID uint
-  transition.Transition
+  transition.Transition[Order]
 }
 ```
 
@@ -33,11 +33,11 @@ OrderStateMachine.Initial("draft")
 OrderStateMachine.State("checkout")
 
 // Define another State and what to do when entering and exiting that state.
-OrderStateMachine.State("paid").Enter(func(order interface{}) error {
+OrderStateMachine.State("paid").Enter(func(order Stater[*Order]) error {
   // To get order object use 'order.(*Order)'
   // business logic here
   return
-}).Exit(func(order interface{}) error {
+}).Exit(func(order Stater[*Order]) error {
   // business logic here
   return
 })
@@ -51,10 +51,10 @@ OrderStateMachine.State("paid_cancelled")
 OrderStateMachine.Event("checkout").To("checkout").From("draft")
 
 // Define another event and what to do before and after performing the transition.
-OrderStateMachine.Event("paid").To("paid").From("checkout").Before(func(order interface{}) error {
+OrderStateMachine.Event("paid").To("paid").From("checkout").Before(func(order Stater[*Order]) error {
   // business logic here
   return nil
-}).After(func(order interface{}) error {
+}).After(func(order Stater[*Order]) error {
   // business logic here
   return nil
 })
@@ -62,7 +62,7 @@ OrderStateMachine.Event("paid").To("paid").From("checkout").Before(func(order in
 // Different state transitions for one event
 cancellEvent := OrderStateMachine.Event("cancel")
 cancellEvent.To("cancelled").From("draft", "checkout")
-cancellEvent.To("paid_cancelled").From("paid").After(func(order interface{}) error {
+cancellEvent.To("paid_cancelled").From("paid").After(func(order Stater[*Order]) error {
   // Refund
 }})
 ```

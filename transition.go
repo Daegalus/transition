@@ -5,63 +5,63 @@ import (
 )
 
 // Transition is a struct, embed it in your struct to enable state machine for the struct
-type Transition struct {
+type Transition[T any] struct {
 	State string
 }
 
 // SetState set state to Stater, just set, won't save it into database
-func (transition *Transition) SetState(name string) {
+func (transition *Transition[T]) SetState(name string) {
 	transition.State = name
 }
 
 // GetState get current state from
-func (transition Transition) GetState() string {
+func (transition Transition[T]) GetState() string {
 	return transition.State
 }
 
 // Stater is a interface including methods `GetState`, `SetState`
-type Stater interface {
+type Stater[T any] interface {
 	SetState(name string)
 	GetState() string
 }
 
 // New initialize a new StateMachine that hold states, events definitions
-func New(value interface{}) *StateMachine {
-	return &StateMachine{
-		states: map[string]*State{},
-		events: map[string]*Event{},
+func New[T any](value T) *StateMachine[T] {
+	return &StateMachine[T]{
+		states: map[string]*State[T]{},
+		events: map[string]*Event[T]{},
 	}
 }
 
 // StateMachine a struct that hold states, events definitions
-type StateMachine struct {
+type StateMachine[T any] struct {
 	initialState string
-	states       map[string]*State
-	events       map[string]*Event
+	states       map[string]*State[T]
+	events       map[string]*Event[T]
 }
 
 // Initial define the initial state
-func (sm *StateMachine) Initial(name string) *StateMachine {
+func (sm *StateMachine[T]) Initial(name string) *StateMachine[T] {
 	sm.initialState = name
 	return sm
 }
 
 // State define a state
-func (sm *StateMachine) State(name string) *State {
-	state := &State{Name: name}
+func (sm *StateMachine[T]) State(name string) *State[T] {
+	state := &State[T]{Name: name}
 	sm.states[name] = state
 	return state
 }
 
 // Event define an event
-func (sm *StateMachine) Event(name string) *Event {
-	event := &Event{Name: name}
+func (sm *StateMachine[T]) Event(name string) *Event[T] {
+	event := &Event[T]{Name: name}
 	sm.events[name] = event
 	return event
 }
 
 // Trigger trigger an event
-func (sm *StateMachine) Trigger(name string, value Stater) error {
+func (sm *StateMachine[T]) Trigger(name string, value Stater[T]) error {
 	stateWas := value.GetState()
 
 	if stateWas == "" {
@@ -70,7 +70,7 @@ func (sm *StateMachine) Trigger(name string, value Stater) error {
 	}
 
 	if event := sm.events[name]; event != nil {
-		var matchedTransitions []*EventTransition
+		var matchedTransitions []*EventTransition[T]
 		for _, transition := range event.transitions {
 			var validFrom = len(transition.froms) == 0
 			if len(transition.froms) > 0 {
@@ -132,59 +132,59 @@ func (sm *StateMachine) Trigger(name string, value Stater) error {
 }
 
 // State contains State information, including enter, exit hooks
-type State struct {
+type State[T any] struct {
 	Name   string
-	enters []func(value interface{}) error
-	exits  []func(value interface{}) error
+	enters []func(value Stater[T]) error
+	exits  []func(value Stater[T]) error
 }
 
 // Enter register an enter hook for State
-func (state *State) Enter(fc func(value interface{}) error) *State {
+func (state *State[T]) Enter(fc func(value Stater[T]) error) *State[T] {
 	state.enters = append(state.enters, fc)
 	return state
 }
 
 // Exit register an exit hook for State
-func (state *State) Exit(fc func(value interface{}) error) *State {
+func (state *State[T]) Exit(fc func(value Stater[T]) error) *State[T] {
 	state.exits = append(state.exits, fc)
 	return state
 }
 
 // Event contains Event information, including transition hooks
-type Event struct {
+type Event[T any] struct {
 	Name        string
-	transitions []*EventTransition
+	transitions []*EventTransition[T]
 }
 
 // To define EventTransition of go to a state
-func (event *Event) To(name string) *EventTransition {
-	transition := &EventTransition{to: name}
+func (event *Event[T]) To(name string) *EventTransition[T] {
+	transition := &EventTransition[T]{to: name}
 	event.transitions = append(event.transitions, transition)
 	return transition
 }
 
 // EventTransition hold event's to/froms states, also including befores, afters hooks
-type EventTransition struct {
+type EventTransition[T any] struct {
 	to      string
 	froms   []string
-	befores []func(value interface{}) error
-	afters  []func(value interface{}) error
+	befores []func(value Stater[T]) error
+	afters  []func(value Stater[T]) error
 }
 
 // From used to define from states
-func (transition *EventTransition) From(states ...string) *EventTransition {
+func (transition *EventTransition[T]) From(states ...string) *EventTransition[T] {
 	transition.froms = states
 	return transition
 }
 
 // Before register before hooks
-func (transition *EventTransition) Before(fc func(value interface{}) error) *EventTransition {
+func (transition *EventTransition[T]) Before(fc func(value Stater[T]) error) *EventTransition[T] {
 	transition.befores = append(transition.befores, fc)
 	return transition
 }
 
 // After register after hooks
-func (transition *EventTransition) After(fc func(value interface{}) error) *EventTransition {
+func (transition *EventTransition[T]) After(fc func(value Stater[T]) error) *EventTransition[T] {
 	transition.afters = append(transition.afters, fc)
 	return transition
 }
