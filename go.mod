@@ -1,3 +1,3 @@
-module transition
+module github.com/daegalus/transition
 
 go 1.19
