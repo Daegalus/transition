@@ -26,7 +26,7 @@ type Stater[T any] interface {
 }
 
 // New initialize a new StateMachine that hold states, events definitions
-func New[T any](value T) *StateMachine[T] {
+func New[T any](_ T) *StateMachine[T] {
 	return &StateMachine[T]{
 		states: map[string]*State[T]{},
 		events: map[string]*Event[T]{},
@@ -48,6 +48,9 @@ func (sm *StateMachine[T]) Initial(name string) *StateMachine[T] {
 
 // State define a state
 func (sm *StateMachine[T]) State(name string) *State[T] {
+	if _, ok := sm.states[name]; ok {
+		return sm.states[name]
+	}
 	state := &State[T]{Name: name}
 	sm.states[name] = state
 	return state
@@ -55,6 +58,9 @@ func (sm *StateMachine[T]) State(name string) *State[T] {
 
 // Event define an event
 func (sm *StateMachine[T]) Event(name string) *Event[T] {
+	if _, ok := sm.events[name]; ok {
+		return sm.events[name]
+	}
 	event := &Event[T]{Name: name}
 	sm.events[name] = event
 	return event
@@ -153,13 +159,20 @@ func (state *State[T]) Exit(fc func(value Stater[T]) error) *State[T] {
 // Event contains Event information, including transition hooks
 type Event[T any] struct {
 	Name        string
-	transitions []*EventTransition[T]
+	transitions map[string]*EventTransition[T]
 }
 
 // To define EventTransition of go to a state
 func (event *Event[T]) To(name string) *EventTransition[T] {
+	if event.transitions == nil {
+		event.transitions = map[string]*EventTransition[T]{}
+	}
+	if _, ok := event.transitions[name]; ok {
+		return event.transitions[name]
+	}
+
 	transition := &EventTransition[T]{to: name}
-	event.transitions = append(event.transitions, transition)
+	event.transitions[name] = transition
 	return transition
 }
 
@@ -173,7 +186,8 @@ type EventTransition[T any] struct {
 
 // From used to define from states
 func (transition *EventTransition[T]) From(states ...string) *EventTransition[T] {
-	transition.froms = states
+	transition.froms = append(transition.froms, states...)
+	transition.froms = removeDuplicateValues(transition.froms)
 	return transition
 }
 
@@ -187,4 +201,20 @@ func (transition *EventTransition[T]) Before(fc func(value Stater[T]) error) *Ev
 func (transition *EventTransition[T]) After(fc func(value Stater[T]) error) *EventTransition[T] {
 	transition.afters = append(transition.afters, fc)
 	return transition
+}
+
+func removeDuplicateValues[T comparable](slice []T) []T {
+	keys := make(map[T]bool)
+	list := []T{}
+
+	// If the key(values of the slice) is not equal
+	// to the already present value in new slice (list)
+	// then we append it. else we jump on another element.
+	for _, entry := range slice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
 }
