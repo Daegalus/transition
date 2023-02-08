@@ -9,7 +9,7 @@ type Order struct {
 	Id      int
 	Address string
 
-	Transition[Order]
+	Transition
 }
 
 func getStateMachine() *StateMachine[*Order] {
@@ -90,11 +90,11 @@ func TestStateCallbacks(t *testing.T) {
 
 	address1 := "I'm an address should be set when enter checkout"
 	address2 := "I'm an address should be set when exit checkout"
-	orderStateMachine.State("checkout").Enter(func(order Stater[*Order]) error {
-		order.(*Order).Address = address1
+	orderStateMachine.State("checkout").Enter(func(order *Order) error {
+		order.Address = address1
 		return nil
-	}).Exit(func(order Stater[*Order]) error {
-		order.(*Order).Address = address2
+	}).Exit(func(order *Order) error {
+		order.Address = address2
 		return nil
 	})
 
@@ -122,11 +122,11 @@ func TestEventCallbacks(t *testing.T) {
 		prevState, afterState string
 	)
 
-	orderStateMachine.Event("checkout").To("checkout").From("draft").Before(func(order Stater[*Order]) error {
-		prevState = order.(*Order).State
+	orderStateMachine.Event("checkout").To("checkout").From("draft").Before(func(order *Order) error {
+		prevState = order.State
 		return nil
-	}).After(func(order Stater[*Order]) error {
-		afterState = order.(*Order).State
+	}).After(func(order *Order) error {
+		afterState = order.State
 		return nil
 	})
 
@@ -150,7 +150,7 @@ func TestTransitionOnEnterCallbackError(t *testing.T) {
 		orderStateMachine = getStateMachine()
 	)
 
-	orderStateMachine.State("checkout").Enter(func(order Stater[*Order]) (err error) {
+	orderStateMachine.State("checkout").Enter(func(order *Order) (err error) {
 		return errors.New("intentional error")
 	})
 
@@ -169,7 +169,7 @@ func TestTransitionOnExitCallbackError(t *testing.T) {
 		orderStateMachine = getStateMachine()
 	)
 
-	orderStateMachine.State("checkout").Exit(func(order Stater[*Order]) (err error) {
+	orderStateMachine.State("checkout").Exit(func(order *Order) (err error) {
 		return errors.New("intentional error")
 	})
 
@@ -192,7 +192,7 @@ func TestEventOnBeforeCallbackError(t *testing.T) {
 		orderStateMachine = getStateMachine()
 	)
 
-	orderStateMachine.Event("checkout").To("checkout").From("draft").Before(func(order Stater[*Order]) error {
+	orderStateMachine.Event("checkout").To("checkout").From("draft").Before(func(order *Order) error {
 		return errors.New("intentional error")
 	})
 
@@ -211,7 +211,7 @@ func TestEventOnAfterCallbackError(t *testing.T) {
 		orderStateMachine = getStateMachine()
 	)
 
-	orderStateMachine.Event("checkout").To("checkout").From("draft").After(func(order Stater[*Order]) error {
+	orderStateMachine.Event("checkout").To("checkout").From("draft").After(func(order *Order) error {
 		return errors.New("intentional error")
 	})
 
